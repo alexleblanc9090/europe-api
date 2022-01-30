@@ -1,24 +1,27 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Destination } from './destinations.model';
+import { Destination, DestinationSchema } from './destinations.model';
 import { v4 as uuid } from 'uuid';
 import { threadId } from 'worker_threads';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { title } from 'process';
 
 @Injectable()
 export class DestinationsService {
     private destinations: Destination[] = [];
 
-    addDestination(city: string, country:string): string{
+    constructor(@InjectModel('Destination') private readonly destinationModel: Model<Destination>) {
+
+    }
+
+    async addDestination(city: string, country: string) {
         //SHOULD DO SOME VALIDATION HERE
-        try{
-            const id: string = uuid();
-            //console.log(id)
-            const newDestinations = new Destination( id , city , country );
-            console.log(newDestinations)
-            this.destinations.push(newDestinations);
-            console.log(this.destinations)
-            return id;
+        try {
+            const newDestinations = new this.destinationModel({ city: city, country: country });
+            const result = await newDestinations.save();
+            return result.id as string;
         }
-        catch(e){
+        catch (e) {
             console.log(e)
         }
 
@@ -27,48 +30,54 @@ export class DestinationsService {
 
     //GET ALL Destinations
 
-    getDestinations(): Destination[] {
-        //Retourne une copie des destinations
-        return [...this.destinations];
+    async getDestinations() {
+        const result = await this.destinationModel.find().exec();
+        return result;
     }
 
     //GET ONE Destinations by the id
 
-    getDestinationsById(destId: string){
-        const destFound = this.findDestination(destId)[0];
-        return {...destFound};
+    async getDestinationsById(destId: string) {
+        const destFound = await this.findDestination(destId);
+        return destFound;
     }
 
     //UPDATE Destination
 
-    updateDestination(destId: string, city: string, country: string ){
-        const [destFound, index] = this.findDestination(destId);
-        //Copy the old destination infos
-        const updateDestination = {...destFound};
-
-        if(city)
-            updateDestination.City = city;
-        if(country)
-            updateDestination.Country = country;
-
-        this.destinations[index] = updateDestination;
-
+    async updateDestination(destId: string, city: string, country: string) {
+        let destination= await this.findDestination(destId);
         
+        if (city)
+            destination.city = city;
+        if (country)
+            destination.country = country;
+
+        destination.save();    
     }
 
-    deleteDestination(id: string){
-        const destinationIndex = this.findDestination(id)[1];
-        this.destinations.splice(destinationIndex,1);
+    async deleteDestination(id: string) {
+       const result = await this.destinationModel.deleteOne({_id: id}).exec();
+       
+       if(result.deletedCount == 0)
+           throw new NotFoundException('no destination found for this id');
     }
 
     //Methods
 
-    private findDestination(id: string): [Destination, number]{
-        const destIndex = this.destinations.findIndex((d) => d.Id === id);
-        const destFound = this.destinations[destIndex];
-        if(!destFound)
-            throw new NotFoundException('Destinations do not exist');
+    private async findDestination(id: string): Promise<Destination>{
 
-        return [destFound, destIndex];
+        let destination;
+        try{
+            destination = await this.destinationModel.findById(id);
+        }
+        catch(e)
+        {
+            throw new NotFoundException();
+        }
+
+        if(!destination)
+            throw new NotFoundException();
+
+        return destination;
     }
 }

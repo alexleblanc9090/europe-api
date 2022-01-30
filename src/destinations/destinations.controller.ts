@@ -7,44 +7,42 @@ export class DestinationsController {
     constructor(private readonly destinationsService: DestinationsService) { }
 
     @Post()
-    addDestination(
+    async addDestination(
         @Body('city') city: string,
         @Body('country') country: string
-    ): any {
-        console.log(city, country)
-        const generatedId = this.destinationsService.addDestination(city,country);
-        return {id: generatedId};
+    ){
+        const generatedId = await this.destinationsService.addDestination(city,country);
+        return generatedId;
     }
 
     @Get()
-    getDestinations(){
-        const listOfDestinations = this.destinationsService.getDestinations();
+    async getDestinations(){
+        const listOfDestinations = await this.destinationsService.getDestinations();
         return listOfDestinations;
     }
 
     @Get(':id')
-    getDestinationsById(@Param('id') destId: string){
-        const listOfDestinations = this.destinationsService.getDestinationsById(destId);
+    async getDestinationsById(@Param('id') destId: string){
+        const listOfDestinations = await this.destinationsService.getDestinationsById(destId);
         return listOfDestinations;
     }
 
     @Patch(':id')
-    updateDestination(
+    async updateDestination(
         @Param('id') destId: string,
         @Body('city') city: string,
         @Body('country') country: string,
         ){
-          this.destinationsService.updateDestination(destId, city, country);  
+          await this.destinationsService.updateDestination(destId, city, country);  
           return null;  
     }
 
     @Delete(':id')
-    deleteDestination(
+    async deleteDestination(
         @Param('id') destId: string
     )
     {
-        console.log('HERE',destId)
-        this.destinationsService.deleteDestination(destId);
+        await this.destinationsService.deleteDestination(destId);
         return null;
     }
 

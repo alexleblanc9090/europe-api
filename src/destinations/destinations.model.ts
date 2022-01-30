@@ -1,14 +1,14 @@
-export class Destination{
+import * as mongoose from 'mongoose'
+
+export const DestinationSchema = new mongoose.Schema({
+    city: {type: String, required: true},
+    country: {type: String, required: true}
+});
+
+export interface Destination extends mongoose.Document{
 
     //PROPS
-    readonly Id: string;
-    public City: string;
-    public Country: string;
-
-    //Constructor
-    constructor(id: string, city:string, country: string){
-        this.Id = id;
-        this.City = city;
-        this.Country = country;
-    }
+    id: string;
+    city: string;
+    country: string;
 }
